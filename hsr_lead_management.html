@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSR Motors - Lead Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-tabs {
+            background: #f8f9fa;
+            padding: 0 30px;
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            border-bottom-color: #2a5298;
+            color: #2a5298;
+            background: white;
+        }
+
+        .content {
+            padding: 30px;
+            min-height: calc(100vh - 140px);
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Dashboard Styles */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-left: 5px solid;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.new { border-left-color: #28a745; }
+        .stat-card.contacted { border-left-color: #007bff; }
+        .stat-card.qualified { border-left-color: #ffc107; }
+        .stat-card.converted { border-left-color: #dc3545; }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+
+        /* Lead Listing Styles */
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .filter-select, .search-input {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-input {
+            min-width: 250px;
+        }
+
+        .leads-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .table td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-new { background: #d4edda; color: #155724; }
+        .status-contacted { background: #d1ecf1; color: #0c5460; }
+        .status-qualified { background: #fff3cd; color: #856404; }
+        .status-not-interested { background: #f8d7da; color: #721c24; }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #2a5298;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e3c72;
+        }
+
+        /* Lead Details Styles */
+        .lead-details {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .lead-info {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .lead-info h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .activity-log {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .activity-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #f1f3f4;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .activity-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20px;
+            width: 8px;
+            height: 8px;
+            background: #2a5298;
+            border-radius: 50%;
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .activity-description {
+            margin-top: 5px;
+            color: #2c3e50;
+        }
+
+        /* Lead Management Styles */
+        .management-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.2);
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .lead-details, .management-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">🚗 HSR Motors</div>
+            <div class="user-info">
+                <span>Welcome, John Doe</span>
+                <span>|</span>
+                <span>Sales Manager</span>
+            </div>
+        </header>
+
+        <nav class="nav-tabs">
+            <div class="tab active" onclick="switchTab('dashboard')">Dashboard</div>
+            <div class="tab" onclick="switchTab('leads')">Lead Listing</div>
+            <div class="tab" onclick="switchTab('details')">Lead Details</div>
+            <div class="tab" onclick="switchTab('management')">Lead Management</div>
+        </nav>
+
+        <main class="content">
+            <!-- Dashboard Screen -->
+            <div id="dashboard" class="screen active">
+                <h2 style="margin-bottom: 25px; color: #2c3e50;">Lead Analytics Dashboard</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card new">
+                        <div class="stat-value">142</div>
+                        <div class="stat-label">New Leads</div>
+                    </div>
+                    <div class="stat-card contacted">
+                        <div class="stat-value">89</div>
+                        <div class="stat-label">Contacted</div>
+                    </div>
+                    <div class="stat-card qualified">
+                        <div class="stat-value">34</div>
+                        <div class="stat-label">Qualified</div>
+                    </div>
+                    <div class="stat-card converted">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Converted</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50;">Lead Sources Distribution</h3>
+                    <canvas id="sourceChart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50;">Weekly Lead Trends</h3>
+                    <canvas id="trendChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Lead Listing Screen -->
+            <div id="leads" class="screen">
+                <h2 style="margin-bottom: 25px; color: #2c3e50;">Lead Management</h2>
+                
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Status:</label>
+                        <select class="filter-select">
+                            <option>All</option>
+                            <option>New</option>
+                            <option>Contacted</option>
+                            <option>Qualified</option>
+                            <option>Not Interested</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Source:</label>
+                        <select class="filter-select">
+                            <option>All Sources</option>
+                            <option>Facebook</option>
+                            <option>Google</option>
+                            <option>Website</option>
+                            <option>Twitter</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Search:</label>
+                        <input type="text" class="search-input" placeholder="Search by name, email, or phone...">
+                    </div>
+                </div>
+
+                <div class="leads-table">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Source</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr onclick="switchTab('details')">
+                                <td>Sarah Johnson</td>
+                                <td>sarah.j@email.com</td>
+                                <td>(555) 123-4567</td>
+                                <td>Facebook</td>
+                                <td><span class="status-badge status-new">New</span></td>
+                                <td>Mike Davis</td>
+                                <td>2024-09-25</td>
+                                <td><button class="btn btn-primary">View</button></td>
+                            </tr>
+                            <tr>
+                                <td>Robert Smith</td>
+                                <td>rob.smith@email.com</td>
+                                <td>(555) 987-6543</td>
+                                <td>Google</td>
+                                <td><span class="status-badge status-contacted">Contacted</span></td>
+                                <td>Lisa Chen</td>
+                                <td>2024-09-24</td>
+                                <td><button class="btn btn-primary">View</button></td>
+                            </tr>
+                            <tr>
+                                <td>Emily Brown</td>
+                                <td>emily.b@email.com</td>
+                                <td>(555) 456-7890</td>
+                                <td>Website</td>
+                                <td><span class="status-badge status-qualified">Qualified</span></td>
+                                <td>John Doe</td>
+                                <td>2024-09-23</td>
+                                <td><button class="btn btn-primary">View</button></td>
+                            </tr>
+                            <tr>
+                                <td>David Wilson</td>
+                                <td>david.w@email.com</td>
+                                <td>(555) 321-0987</td>
+                                <td>Twitter</td>
+                                <td><span class="status-badge status-not-interested">Not Interested</span></td>
+                                <td>Mike Davis</td>
+                                <td>2024-09-22</td>
+                                <td><button class="btn btn-primary">View</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Lead Details Screen -->
+            <div id="details" class="screen">
+                <h2 style="margin-bottom: 25px; color: #2c3e50;">Lead Details - Sarah Johnson</h2>
+                
+                <div class="lead-details">
+                    <div class="lead-info">
+                        <h3>Contact Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Full Name</span>
+                                <span class="info-value">Sarah Johnson</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Email</span>
+                                <span class="info-value">sarah.j@email.com</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Phone</span>
+                                <span class="info-value">(555) 123-4567</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Location</span>
+                                <span class="info-value">New York, NY</span>
+                            </div>
+                        </div>
+
+                        <h3 style="margin-top: 30px;">Lead Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Source</span>
+                                <span class="info-value">Facebook Ad Campaign</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Status</span>
+                                <span class="info-value"><span class="status-badge status-new">New</span></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Assigned To</span>
+                                <span class="info-value">Mike Davis</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Priority</span>
+                                <span class="info-value">High</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Interested In</span>
+                                <span class="info-value">SUV, Budget: $30k-40k</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Timeline</span>
+                                <span class="info-value">Within 2 months</span>
+                            </div>
+                        </div>
+
+                        <h3 style="margin-top: 30px;">Notes</h3>
+                        <p style="color: #6c757d; line-height: 1.6;">Looking for a reliable family SUV. Mentioned having two young children and needing good safety ratings. Previous car was a Honda CR-V. Prefers automatic transmission and good fuel efficiency.</p>
+                    </div>
+
+                    <div class="activity-log">
+                        <h3>Activity Timeline</h3>
+                        <div class="activity-item">
+                            <div class="activity-time">Sep 25, 2024 - 10:30 AM</div>
+                            <div class="activity-description">Lead created from Facebook campaign</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-time">Sep 25, 2024 - 11:15 AM</div>
+                            <div class="activity-description">Assigned to Mike Davis</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-time">Sep 25, 2024 - 2:45 PM</div>
+                            <div class="activity-description">First contact attempt - voicemail left</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="switchTab('management')">Edit Lead</button>
+                    <button class="btn btn-success">Call Now</button>
+                    <button class="btn btn-primary">Send Email</button>
+                    <button class="btn btn-danger">Mark Not Interested</button>
+                </div>
+            </div>
+
+            <!-- Lead Management Screen -->
+            <div id="management" class="screen">
+                <h2 style="margin-bottom: 25px; color: #2c3e50;">Lead Management - Sarah Johnson</h2>
+                
+                <div class="management-grid">
+                    <div class="lead-info">
+                        <h3>Update Lead Information</h3>
+                        <form>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select class="form-control">
+                                    <option>New</option>
+                                    <option>Contacted</option>
+                                    <option>Qualified</option>
+                                    <option>Not Interested</option>
+                                    <option>Converted</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Assigned To</label>
+                                <select class="form-control">
+                                    <option>Mike Davis</option>
+                                    <option>Lisa Chen</option>
+                                    <option>John Doe</option>
+                                    <option>Sarah Wilson</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Priority</label>
+                                <select class="form-control">
+                                    <option>Low</option>
+                                    <option>Medium</option>
+                                    <option selected>High</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Expected Close Date</label>
+                                <input type="date" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Budget Range</label>
+                                <select class="form-control">
+                                    <option>Under $20k</option>
+                                    <option>$20k - $30k</option>
+                                    <option selected>$30k - $40k</option>
+                                    <option>$40k - $50k</option>
+                                    <option>Over $50k</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="lead-info">
+                        <h3>Add Activity</h3>
+                        <form>
+                            <div class="form-group">
+                                <label>Activity Type</label>
+                                <select class="form-control">
+                                    <option>Phone Call</option>
+                                    <option>Email</option>
+                                    <option>Meeting</option>
+                                    <option>Note</option>
+                                    <option>Follow-up</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date & Time</label>
+                                <input type="datetime-local" class="form-control" value="2024-09-25T14:30">
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea class="form-control" placeholder="Enter activity details..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Next Follow-up</label>
+                                <input type="datetime-local" class="form-control">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-success">Save Changes</button>
+                    <button class="btn btn-primary">Save & Continue</button>
+                    <button class="btn" onclick="switchTab('details')" style="background: #6c757d; color: white;">Cancel</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected screen
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activate selected tab
+            event.target.classList.add('active');
+        }
+
+        // Initialize charts when dashboard is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Simple chart implementation using Canvas
+            const sourceChart = document.getElementById('sourceChart');
+            const trendChart = document.getElementById('trendChart');
+            
+            if (sourceChart) {
+                const ctx = sourceChart.getContext('2d');
+                drawPieChart(ctx, sourceChart.width, sourceChart.height);
+            }
+            
+            if (trendChart) {
+                const ctx = trendChart.getContext('2d');
+                drawLineChart(ctx, trendChart.width, trendChart.height);
+            }
+        });
+
+        function drawPieChart(ctx, width, height) {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) / 2 - 20;
+            
+            const data = [
+                { label: 'Facebook', value: 40, color: '#3b5998' },
+                { label: 'Google', value: 30, color: '#ea4335' },
+                { label: 'Website', value: 20, color: '#34a853' },
+                { label: 'Twitter', value: 10, color: '#1da1f2' }
+            ];
+            
+            let currentAngle = 0;
+            
+            data.forEach(item => {
+                const sliceAngle = (item.value / 100) * 2 * Math.PI;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fillStyle = item.color;
+                ctx.fill();
+                
+                // Add labels
+                const labelAngle = currentAngle + sliceAngle / 2;
+                const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
+                const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(item.label, labelX, labelY);
+                ctx.fillText(item.value + '%', labelX, labelY + 15);
+                
+                currentAngle += sliceAngle;
+            });
+        }
+
+        function drawLineChart(ctx, width, height) {
+            const margin = 40;
+            const chartWidth = width - 2 * margin;
+            const chartHeight = height - 2 * margin;
+            
+            const data = [15, 25, 35, 30, 45, 55, 60];
+            const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            
+            // Draw axes
+            ctx.strokeStyle = '#dee2e6';
+            ctx.beginPath();
+            ctx.moveTo(margin, margin);
+            ctx.lineTo(margin, height - margin);
+            ctx.lineTo(width - margin, height - margin);
+            ctx.stroke();
+            
+            // Draw data line
+            ctx.strokeStyle = '#2a5298';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            data.forEach((value, index) => {
+                const x = margin + (index * chartWidth) / (data.length - 1);
+                const y = height - margin - (value / 70) * chartHeight;
+                
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                
+                // Draw points
+                ctx.fillStyle = '#2a5298';
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            ctx.stroke();
+            
+            // Add labels
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            labels.forEach((label, index) => {
+                const x = margin + (index * chartWidth) / (labels.length - 1);
+                ctx.fillText(label, x, height - margin + 20);
+            });
+        }
+    </script>
+</body>
+</html>
